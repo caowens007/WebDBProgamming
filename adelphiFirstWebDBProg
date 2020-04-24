@@ -1,0 +1,87 @@
+const AWS = require('aws-sdk')
+const tableName = 'owens_students'
+async function getItem (tableName, myStudentLastName) {
+    const params = {
+      TableName : tableName,
+      Key: {
+          studentLastName: myStudentLastName
+      }
+    };
+    const documentClient = new AWS.DynamoDB.DocumentClient();
+    const getResult = await documentClient.get(params).promise();
+    return getResult.Item ? getResult.Item : false
+}
+async function putItem (tableName, studentLastName, myStudentFirstName, myClassName, myPeriod) {
+    const params = {
+      TableName : tableName,
+      Item: {
+          studentLastName: myStudentLastName,
+          studentFirstName: myStudentFirstName,
+          className: myClassName,
+          period: myPeriod
+      }
+    };
+    const documentClient = new AWS.DynamoDB.DocumentClient();
+    const putResult = await documentClient.put(params).promise();
+    return putResult
+}
+exports.handler = async (event) => {
+    const params = event.queryStringParameters
+    if (!params) {
+        const response = {
+            statusCode: 403,
+            headers: {
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify('No params provided!'),
+        };
+        return response;
+    }
+    const studentLastName = params.myStudentLastName
+    const studentFirstName = params.myStudentFirstName
+    const className = params.myClassName
+    const period = params.myPeriod
+    const action = params.action
+    if (!username || !action) {
+        const response = {
+            statusCode: 403,
+            headers: {
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify('A required parameter was not provided!'),
+        };
+        return response;
+    }
+    if (action === 'putUser') {
+        const putResult = await putItem(tableName, myStudentLastName , myClassName, myPeriod)
+        const response = {
+            statusCode: 200,
+            headers: {
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify(`${username} was succesfully written to the database!`),
+        };
+        return response;
+    }
+    if (action === 'getUser') {
+        const getResult = await getItem(tableName, myStudentLastName )
+        if (!getResult) {
+            const response = {
+                statusCode: 404,
+                headers: {
+                    'Access-Control-Allow-Origin': '*'
+                },
+                body: JSON.stringify('That user was not found!'),
+            };
+            return response;
+        }
+        const response = {
+            statusCode: 200,
+            headers: {
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify(getResult),
+        };
+        return response;
+    }
+};
